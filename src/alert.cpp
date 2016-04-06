@@ -3,7 +3,9 @@
 //
 
 #include <algorithm>
-
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/foreach.hpp>
 #include <map>
 
 #include "alert.h"
@@ -11,18 +13,16 @@
 #include "net.h"
 #include "sync.h"
 #include "ui_interface.h"
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/replace.hpp>
-#include <boost/foreach.hpp>
+
 using namespace std;
 
 map<uint256, CAlert> mapAlerts;
 CCriticalSection cs_mapAlerts;
 
-static const char* pszMainKey = "0486bce1bac0d543f104cbff2bd23680056a3b9ea05e1137d2ff90eeb5e08472eb500322593a2cb06fbf8297d7beb6cd30cb90f98153b5b7cce1493749e41e0284";
+static const char* pszMainKey = "04297e4e61e2060d8719280544d17ac3c00c04033f0d3051eda879dbaa7ec5a6eee294444907dedb9ffadddec082d9560010bf430480ba3cbb58f29e6b1f94e760";
 
 // TestNet alerts pubKey
-static const char* pszTestKey = "0471dc165db490094d35cde15b1f5d755fa6ad6f2b5ed0f340e3f17f57389c3c2af113a8cbcc885bde73305a553b5640c83021128008ddf882e856336269080496";
+static const char* pszTestKey = "049236256689E39E7323C4BC92FBDCA9EC8C2D115B96B2BCC55F87A857E59D48B1C3654F5F6F0257399E69ED1F3D08DCE555DD421EA4570B119C92C038DA083956";
 
 // TestNet alerts private key
 // "308201130201010420b665cff1884e53da26376fd1b433812c9a5a8a4d5221533b15b9629789bb7e42a081a53081a2020101302c06072a8648ce3d0101022100fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f300604010004010704410479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8022100fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141020101a1440342000471dc165db490094d35cde15b1f5d755fa6ad6f2b5ed0f340e3f17f57389c3c2af113a8cbcc885bde73305a553b5640c83021128008ddf882e856336269080496"
