@@ -11,7 +11,6 @@
 #include "main.h"
 #include "uint256.h"
 
-
 static const int nCheckpointSpan = 10;
 
 namespace Checkpoints
@@ -27,13 +26,15 @@ namespace Checkpoints
     //
     static MapCheckpoints mapCheckpoints =
         boost::assign::map_list_of
-        ( 0,      hashGenesisBlock )
+        (0, uint256("0x00000ba3d7efc76e3f2db9edaf963a5867358454b99875e6c078a01024549ee7"))
+        (1, uint256("0x0000019dc404291b68edaf6f90701d5503b4f84c6ba0c219271c2c277581a110"))
+        
     ;
 
     // TestNet has no checkpoints
     static MapCheckpoints mapCheckpointsTestnet =
         boost::assign::map_list_of
-        ( 0, hashGenesisBlockTestNet )
+        (0, uint256("0x00000ba3d7efc76e3f2db9edaf963a5867358454b99875e6c078a01024549ee7"))
         ;
 
     bool CheckHardened(int nHeight, const uint256& hash)
@@ -187,7 +188,7 @@ namespace Checkpoints
         return false;
     }
 
-    // Automatically select a suitable sync-checkpoint
+    // Automatically select a suitable sync-checkpoint 
     uint256 AutoSelectSyncCheckpoint()
     {
         const CBlockIndex *pindex = pindexBest;
@@ -232,7 +233,7 @@ namespace Checkpoints
             return false;
         if (hashBlock == hashPendingCheckpoint)
             return true;
-        if (mapOrphanBlocks.count(hashPendingCheckpoint)
+        if (mapOrphanBlocks.count(hashPendingCheckpoint) 
             && hashBlock == WantedByOrphan(mapOrphanBlocks[hashPendingCheckpoint]))
             return true;
         return false;
@@ -350,7 +351,7 @@ namespace Checkpoints
 }
 
 // ppcoin: sync-checkpoint master key
-const std::string CSyncCheckpoint::strMasterPubKey = "04a18357665ed7a802dcf252ef528d3dc786da38653b51d1ab8e9f4820b55aca807892a056781967315908ac205940ec9d6f2fd0a85941966971eac7e475a27826";
+const std::string CSyncCheckpoint::strMasterPubKey = "04f0d79dd35bc188190a16b58ce635e6361581371c88e0b15a5744b812aa03bdb8b408c7d0304508aacd042015824a0d37cf8a785ee94f6ab5ec83094c75250a24";
 
 std::string CSyncCheckpoint::strMasterPrivKey = "";
 
