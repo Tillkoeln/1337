@@ -12,9 +12,6 @@
 #include "scrypt.h"
 #include "zerocoin/Zerocoin.h"
 #include "hashblock.h"
-#include "util.h"
-
-#include <iostream>
 #include <list>
 
 class CWallet;
@@ -29,18 +26,17 @@ class CInv;
 class CRequestTracker;
 class CNode;
 
-static const int LAST_POW_BLOCK = 10000; //
+static const int LAST_POW_BLOCK = 17280;
 
-static const unsigned int MAX_BLOCK_SIZE = 20000000;
+static const unsigned int MAX_BLOCK_SIZE = 1000000;
 static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
 static const unsigned int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
 static const unsigned int MAX_ORPHAN_TRANSACTIONS = MAX_BLOCK_SIZE/100;
 static const unsigned int MAX_INV_SZ = 50000;
-static const int64_t MIN_TX_FEE = 1000;
+static const int64_t MIN_TX_FEE = 10000;
 static const int64_t MIN_RELAY_TX_FEE = MIN_TX_FEE;
-static const int64_t MAX_MONEY = 100000000 * COIN;
-static const int64_t COIN_YEAR_REWARD = 10 * CENT;
-static const int MODIFIER_INTERVAL_SWITCH = 1;
+static const int64_t MAX_MONEY = 235311570 * COIN;
+static const int64_t COIN_YEAR_REWARD = 1337 * CENT; // 60% per year
 
 inline bool MoneyRange(int64_t nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
 // Threshold for nLockTime: below this value it is interpreted as block number, otherwise as UNIX timestamp.
@@ -52,11 +48,11 @@ static const int fHaveUPnP = true;
 static const int fHaveUPnP = false;
 #endif
 
-static const uint256 hashGenesisBlock("0x00000ba3d7efc76e3f2db9edaf963a5867358454b99875e6c078a01024549ee7");
-static const uint256 hashGenesisBlockTestNet("0x00000ba3d7efc76e3f2db9edaf963a5867358454b99875e6c078a01024549ee7");
+static const uint256 hashGenesisBlock("0x000004611c87517dfd29fe7f34bd6da2e1ad3d305ac12afe80a3229069390f68");
+static const uint256 hashGenesisBlockTestNet("0x000004611c87517dfd29fe7f34bd6da2e1ad3d305ac12afe80a3229069390f68");
 
-inline int64_t PastDrift(int64_t nTime)   { return nTime - 5 * 60; } // up to 5 minutes from the past   
-inline int64_t FutureDrift(int64_t nTime) { return nTime + 5 * 60; } // up to 5 minutes from the future
+inline int64_t PastDrift(int64_t nTime)   { return nTime - 10 * 60; } // up to 10 minutes from the past
+inline int64_t FutureDrift(int64_t nTime) { return nTime + 10 * 60; } // up to 10 minutes from the future
 
 extern libzerocoin::Params* ZCParams;
 extern CScript COINBASE_FLAGS;
@@ -406,6 +402,8 @@ public:
     std::string ToString() const
     {
         if (IsEmpty()) return "CTxOut(empty)";
+        if (scriptPubKey.size() < 6)
+            return "CTxOut(error)";
         return strprintf("CTxOut(nValue=%s, scriptPubKey=%s)", FormatMoney(nValue).c_str(), scriptPubKey.ToString().c_str());
     }
 
@@ -821,6 +819,8 @@ public:
 
 
 
+
+
 /** Nodes collect new transactions into a block, hash them into a hash tree,
  * and scan through nonce values to make the block's hash satisfy proof-of-work
  * requirements.  When they solve the proof-of-work, they broadcast the block
@@ -831,8 +831,6 @@ public:
  * Blocks are appended to blk0001.dat files on disk.  Their location on disk
  * is indexed by CBlockIndex objects in memory.
  */
-
-
 class CBlock
 {
 public:
@@ -913,7 +911,6 @@ public:
     uint256 GetPoWHash() const
     {
         return Hash9(BEGIN(nVersion), END(nNonce));
-
     }
 
     int64_t GetBlockTime() const
@@ -1127,7 +1124,7 @@ public:
     int64_t nMoneySupply;
 
     unsigned int nFlags;  // ppcoin: block index flags
-    enum  
+    enum
     {
         BLOCK_PROOF_OF_STAKE = (1 << 0), // is proof-of-stake block
         BLOCK_STAKE_ENTROPY  = (1 << 1), // entropy bit for stake modifier
@@ -1265,6 +1262,18 @@ public:
         return pbegin[(pend - pbegin)/2];
     }
 
+    int64_t GetMedianTime() const
+    {
+        const CBlockIndex* pindex = this;
+        for (int i = 0; i < nMedianTimeSpan/2; i++)
+        {
+            if (!pindex->pnext)
+                return GetBlockTime();
+            pindex = pindex->pnext;
+        }
+        return pindex->GetMedianTimePast();
+    }
+
     /**
      * Returns true if there are nRequired or more blocks of minVersion or above
      * in the last nToCheck blocks, starting at pstart and going backwards.
@@ -1380,7 +1389,7 @@ public:
             const_cast<CDiskBlockIndex*>(this)->prevoutStake.SetNull();
             const_cast<CDiskBlockIndex*>(this)->nStakeTime = 0;
         }
-	READWRITE(hashProof);
+        READWRITE(hashProof);
 
         // block header
         READWRITE(this->nVersion);
