@@ -14,6 +14,7 @@
 #include <boost/algorithm/string/replace.hpp>
 
 using namespace std;
+extern unsigned int nStakeMaxAge;
 
 unsigned int nStakeSplitAge = 1 * 24 * 60 * 60;
 int64_t nStakeCombineThreshold = 1000 * COIN;
@@ -378,7 +379,7 @@ void CWallet::WalletUpdateSpent(const CTransaction &tx, bool fBlock)
                     printf("WalletUpdateSpent: bad wtx %s\n", wtx.GetHash().ToString().c_str());
                 else if (!wtx.IsSpent(txin.prevout.n) && IsMine(wtx.vout[txin.prevout.n]))
                 {
-                    printf("WalletUpdateSpent found spent coin %s BC %s\n", FormatMoney(wtx.GetCredit()).c_str(), wtx.GetHash().ToString().c_str());
+                    printf("WalletUpdateSpent found spent coin %s SUM %s\n", FormatMoney(wtx.GetCredit()).c_str(), wtx.GetHash().ToString().c_str());
                     wtx.MarkSpent(txin.prevout.n);
                     wtx.WriteToDisk();
                     NotifyTransactionChanged(this, txin.prevout.hash, CT_UPDATED);
@@ -509,19 +510,17 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn)
                 return false;
 #ifndef QT_GUI
         // If default receiving address gets used, replace it with a new one
-        if (vchDefaultKey.IsValid()) {
-            CScript scriptDefaultKey;
-            scriptDefaultKey.SetDestination(vchDefaultKey.GetID());
-            BOOST_FOREACH(const CTxOut& txout, wtx.vout)
+        CScript scriptDefaultKey;
+        scriptDefaultKey.SetDestination(vchDefaultKey.GetID());
+        BOOST_FOREACH(const CTxOut& txout, wtx.vout)
+        {
+            if (txout.scriptPubKey == scriptDefaultKey)
             {
-                if (txout.scriptPubKey == scriptDefaultKey)
+                CPubKey newDefaultKey;
+                if (GetKeyFromPool(newDefaultKey, false))
                 {
-                    CPubKey newDefaultKey;
-                    if (GetKeyFromPool(newDefaultKey, false))
-                    {
-                        SetDefaultKey(newDefaultKey);
-                        SetAddressBookName(vchDefaultKey.GetID(), "");
-                    }
+                    SetDefaultKey(newDefaultKey);
+                    SetAddressBookName(vchDefaultKey.GetID(), "");
                 }
             }
         }
@@ -915,7 +914,7 @@ void CWallet::ReacceptWalletTransactions()
                 }
                 if (fUpdated)
                 {
-                    printf("ReacceptWalletTransactions found spent coin %s BC %s\n", FormatMoney(wtx.GetCredit()).c_str(), wtx.GetHash().ToString().c_str());
+                    printf("ReacceptWalletTransactions found spent coin %s SUM %s\n", FormatMoney(wtx.GetCredit()).c_str(), wtx.GetHash().ToString().c_str());
                     wtx.MarkDirty();
                     wtx.WriteToDisk();
                 }
@@ -1439,8 +1438,7 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, int64_t> >& vecSend, 
                         //  post-backup change.
 
                         // Reserve a new key pair from key pool
-                        CPubKey vchPubKey;
-                        assert(reservekey.GetReservedKey(vchPubKey)); // should never fail, as we just unlocked
+                        CPubKey vchPubKey = reservekey.GetReservedKey();
 
                         scriptChange.SetDestination(vchPubKey.GetID());
                     }
@@ -2276,7 +2274,7 @@ void CWallet::FixSpentCoins(int& nMismatchFound, int64_t& nBalanceInQuestion, bo
         {
             if (IsMine(pcoin->vout[n]) && pcoin->IsSpent(n) && (txindex.vSpent.size() <= n || txindex.vSpent[n].IsNull()))
             {
-                printf("FixSpentCoins found lost coin %s BC %s[%d], %s\n",
+                printf("FixSpentCoins found lost coin %s SUM %s[%d], %s\n",
                     FormatMoney(pcoin->vout[n].nValue).c_str(), pcoin->GetHash().ToString().c_str(), n, fCheckOnly? "repair not attempted" : "repairing");
                 nMismatchFound++;
                 nBalanceInQuestion += pcoin->vout[n].nValue;
@@ -2288,7 +2286,7 @@ void CWallet::FixSpentCoins(int& nMismatchFound, int64_t& nBalanceInQuestion, bo
             }
             else if (IsMine(pcoin->vout[n]) && !pcoin->IsSpent(n) && (txindex.vSpent.size() > n && !txindex.vSpent[n].IsNull()))
             {
-                printf("FixSpentCoins found spent coin %s BC %s[%d], %s\n",
+                printf("FixSpentCoins found spent coin %s SUM %s[%d], %s\n",
                     FormatMoney(pcoin->vout[n].nValue).c_str(), pcoin->GetHash().ToString().c_str(), n, fCheckOnly? "repair not attempted" : "repairing");
                 nMismatchFound++;
                 nBalanceInQuestion += pcoin->vout[n].nValue;
@@ -2324,7 +2322,7 @@ void CWallet::DisableTransaction(const CTransaction &tx)
     }
 }
 
-bool CReserveKey::GetReservedKey(CPubKey& pubkey)
+CPubKey CReserveKey::GetReservedKey()
 {
     if (nIndex == -1)
     {
@@ -2332,17 +2330,14 @@ bool CReserveKey::GetReservedKey(CPubKey& pubkey)
         pwallet->ReserveKeyFromKeyPool(nIndex, keypool);
         if (nIndex != -1)
             vchPubKey = keypool.vchPubKey;
-        else {
-            if (pwallet->vchDefaultKey.IsValid()) {
-                printf("CReserveKey::GetReservedKey(): Warning: Using default key instead of a new key, top up your keypool!");
-                vchPubKey = pwallet->vchDefaultKey;
-            } else
-                return false;
+        else
+        {
+            printf("CReserveKey::GetReservedKey(): Warning: Using default key instead of a new key, top up your keypool!");
+            vchPubKey = pwallet->vchDefaultKey;
         }
     }
     assert(vchPubKey.IsValid());
-    pubkey = vchPubKey;
-    return true;
+    return vchPubKey;
 }
 
 void CReserveKey::KeepKey()

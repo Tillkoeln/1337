@@ -14,7 +14,7 @@ typedef std::map<int, unsigned int> MapModifierCheckpoints;
 // Hard checkpoints of stake modifiers to ensure they are deterministic
 static std::map<int, unsigned int> mapStakeModifierCheckpoints =
     boost::assign::map_list_of
-        ( 0, 0xfd11f4e7 )
+        ( 0, 0x0e00670b )
     ;
 
 // Hard checkpoints of stake modifiers to ensure they are deterministic (testNet)
@@ -117,7 +117,7 @@ static bool SelectBlockFromCandidates(vector<pair<int64_t, uint256> >& vSortedBy
 // selected block of a given block group in the past.
 // The selection of a block is based on a hash of the block's proof-hash and
 // the previous stake modifier.
-// Stake modifier is recomputed at a fixed time interval instead of every
+// Stake modifier is recomputed at a fixed time interval instead of every 
 // block. This is to make it difficult for an attacker to gain control of
 // additional bits in the stake modifier, even after generating a chain of
 // blocks.
@@ -253,7 +253,7 @@ static bool GetKernelStakeModifier(uint256 hashBlockFrom, uint64_t& nStakeModifi
 //                  future proof-of-stake at the time of the coin's confirmation
 //   txPrev.block.nTime: prevent nodes from guessing a good timestamp to
 //                       generate transaction for future advantage
-//   txPrev.offset: offset of txPrev inside block, to reduce the chance of
+//   txPrev.offset: offset of txPrev inside block, to reduce the chance of 
 //                  nodes generating coinstake at the same time
 //   txPrev.nTime: reduce the chance of nodes generating coinstake at the same
 //                 time
@@ -312,7 +312,7 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
     if (fDebug && !fPrintProofOfStake)
     {
         printf("CheckStakeKernelHash() : using modifier 0x%016"PRIx64" at height=%d timestamp=%s for block from height=%d timestamp=%s\n",
-            nStakeModifier, nStakeModifierHeight,
+            nStakeModifier, nStakeModifierHeight, 
             DateTimeStrFormat(nStakeModifierTime).c_str(),
             mapBlockIndex[hashBlockFrom]->nHeight,
             DateTimeStrFormat(blockFrom.GetBlockTime()).c_str());
@@ -365,7 +365,7 @@ bool CheckCoinStakeTimestamp(int64_t nTimeBlock, int64_t nTimeTx)
 // Get stake modifier checksum
 unsigned int GetStakeModifierChecksum(const CBlockIndex* pindex)
 {
-    assert (pindex->pprev || pindex->GetBlockHash() == (!fTestNet ? hashGenesisBlock : hashGenesisBlockTestNet));
+    //assert (pindex->pprev || pindex->GetBlockHash() == (!fTestNet ? hashGenesisBlock : hashGenesisBlockTestNet));
     // Hash previous checksum with flags, hashProofOfStake and nStakeModifier
     CDataStream ss(SER_GETHASH, 0);
     if (pindex->pprev)

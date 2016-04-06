@@ -345,7 +345,7 @@ public:
     }
 
     void ReturnKey();
-    bool GetReservedKey(CPubKey &pubkey);
+    CPubKey GetReservedKey();
     void KeepKey();
 };
 
